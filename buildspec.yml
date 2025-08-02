@@ -5,27 +5,26 @@ env:
     REPOSITORY_URI: 570753532112.dkr.ecr.ap-south-1.amazonaws.com/brain-tasks-app
 
 phases:
-  pre_build:
-    commands:
-      - echo Logging in to Amazon ECR...
-      - aws --version
-      - aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin $REPOSITORY_URI
-      - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
-      - echo IMAGE_TAG=$IMAGE_TAG
-
   install:
     runtime-versions:
       nodejs: 18
     commands:
-      - echo Installing dependencies...
+      - echo Installing Node dependencies...
       - npm install
       - node -v
       - npm -v
 
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin $REPOSITORY_URI
+      - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - echo IMAGE_TAG=$IMAGE_TAG
+
   build:
     commands:
       - echo Building React app...
-      - npm run build
+      - npm run build || { echo "React build failed"; exit 1; }
       - echo Building Docker image...
       - docker build -t $REPOSITORY_URI:$IMAGE_TAG .
 
