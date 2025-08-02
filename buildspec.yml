@@ -4,12 +4,12 @@ phases:
   install:
     runtime-versions:
       nodejs: 18
-      docker: 20
     commands:
       - echo Installing dependencies including dev dependencies...
       - npm install --include=dev
       - node -v
       - npm -v
+      - docker --version
 
   pre_build:
     commands:
