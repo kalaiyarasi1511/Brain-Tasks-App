@@ -6,20 +6,22 @@ phases:
       - echo Logging in to Amazon ECR...
       - aws --version
       - aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin $REPOSITORY_URI
-      - IMAGE_TAG=$(date +%Y%m%d%H%M%S)
-      - echo IMAGE_TAG=$IMAGE_TAG
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+
   build:
     commands:
       - echo Building the Docker image...
       - docker build -t $REPOSITORY_URI:$IMAGE_TAG .
+      - docker tag $REPOSITORY_URI:$IMAGE_TAG $REPOSITORY_URI:latest
+
   post_build:
     commands:
-      - echo Build completed on `date`
-      - echo Pushing Docker image to ECR...
+      - echo Pushing the Docker image to Amazon ECR...
       - docker push $REPOSITORY_URI:$IMAGE_TAG
-      - echo Updating kubeconfig...
+      - docker push $REPOSITORY_URI:latest
+      - echo Updating Kubernetes deployment...
       - aws eks update-kubeconfig --region ap-south-1 --name brain-tasks-cluster
-      - echo Deploying to EKS...
       - kubectl set image deployment/brain-tasks-app brain-tasks-container=$REPOSITORY_URI:$IMAGE_TAG
 
 artifacts:
