@@ -1,32 +1,28 @@
 # Stage 1: Build the React app
 FROM node:18-alpine AS build
 
-# Set working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json (better caching)
+# Copy only package.json and package-lock.json first
 COPY package*.json ./
 
-# Install dependencies
+# Install dependencies inside container (fresh install)
 RUN npm install
 
-# Copy all source code
+# Copy all source files (but not local node_modules)
 COPY . .
 
-# Build the app (React outputs to /app/build)
+# Build React app
 RUN npm run build
 
 # Stage 2: Serve with NGINX
 FROM nginx:alpine
 
-# Remove default nginx static assets
+# Remove default nginx static files
 RUN rm -rf /usr/share/nginx/html/*
 
-# Copy React build output from Stage 1
+# Copy build output from build stage
 COPY --from=build /app/build /usr/share/nginx/html
 
-# Expose port 80
 EXPOSE 80
-
-# Start NGINX
 CMD ["nginx", "-g", "daemon off;"]
