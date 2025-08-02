@@ -13,14 +13,16 @@ phases:
       - echo Build started on `date`
       - echo Building the Docker image...
       - docker build -t $REPOSITORY_URI:$IMAGE_TAG .
-  
+
   post_build:
     commands:
       - echo Build completed on `date`
+      - echo Pushing Docker image to ECR...
       - docker push $REPOSITORY_URI:$IMAGE_TAG
-      - echo Writing image definition file...
-      - printf '[{"name":"<your-k8s-container-name>","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+      - echo Writing image definitions file...
+      - printf '[{"name":"brain-tasks-container","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
 
 artifacts:
-  files: 
+  files:
     - imagedefinitions.json
+
