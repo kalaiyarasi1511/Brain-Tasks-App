@@ -1,16 +1,6 @@
 version: 0.2
 
 phases:
-  install:
-    runtime-versions:
-      nodejs: 18
-    commands:
-      - echo Installing dependencies including dev dependencies...
-      - npm install --include=dev
-      - node -v
-      - npm -v
-      - docker --version
-
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
@@ -24,20 +14,18 @@ phases:
   build:
     commands:
       - echo Build started on `date`
-      - echo Running React build...
-      - npm run build
       - echo Building Docker image...
       - docker build -t $REPOSITORY_URI:$IMAGE_TAG .
-      - echo "Listing Docker images after build..."
-      - docker images
 
   post_build:
     commands:
       - echo Build completed on `date`
       - echo Pushing Docker image to ECR...
       - docker push $REPOSITORY_URI:$IMAGE_TAG
-      - echo Writing image definitions file...
-      - printf '[{"name":"brain-tasks-container","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+      - echo Updating Kubernetes deployment...
+      - aws eks update-kubeconfig --region ap-south-1 --name brain-tasks-cluster
+      - kubectl set image deployment/brain-tasks-app brain-tasks-container=$REPOSITORY_URI:$IMAGE_TAG
+      - kubectl rollout status deployment/brain-tasks-app
 
 artifacts:
   files:

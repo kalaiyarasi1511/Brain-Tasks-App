@@ -3,23 +3,23 @@ FROM node:18-alpine AS build
 
 WORKDIR /app
 
-# Copy package.json and package-lock.json (better for caching)
+# Copy package.json and package-lock.json
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Copy all source code
 COPY . .
 
-# Build the app
+# Build the app (React outputs to /app/build)
 RUN npm run build
 
 # Stage 2: Serve with NGINX
 FROM nginx:alpine
 
 # Copy build output from Stage 1
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=build /app/build /usr/share/nginx/html
 
 # Expose port 80
 EXPOSE 80
