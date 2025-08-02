@@ -1,34 +1,39 @@
 version: 0.2
 
+env:
+  variables:
+    REPOSITORY_URI: 570753532112.dkr.ecr.ap-south-1.amazonaws.com/brain-tasks-app
+
 phases:
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
       - aws --version
-      - aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 570753532112.dkr.ecr.ap-south-1.amazonaws.com
-      - REPOSITORY_URI=570753532112.dkr.ecr.ap-south-1.amazonaws.com/brain-tasks-app
+      - aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin $REPOSITORY_URI
       - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
-      - echo REPOSITORY_URI=$REPOSITORY_URI
       - echo IMAGE_TAG=$IMAGE_TAG
+
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - echo Installing dependencies...
+      - npm install
+      - node -v
+      - npm -v
 
   build:
     commands:
-      - echo Build started on `date`
-      - echo Installing dependencies...
-      - npm install
-      - echo Running React build...
+      - echo Building React app...
       - npm run build
-      - echo Building the Docker image...
+      - echo Building Docker image...
       - docker build -t $REPOSITORY_URI:$IMAGE_TAG .
-      - echo "Listing Docker images after build..."
-      - docker images
 
   post_build:
     commands:
-      - echo Build completed on `date`
-      - echo Pushing image to ECR...
+      - echo Pushing Docker image...
       - docker push $REPOSITORY_URI:$IMAGE_TAG
-      - echo Writing image definition file...
+      - echo Writing image definition...
       - printf '[{"name":"brain-tasks-container","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
 
 artifacts:
