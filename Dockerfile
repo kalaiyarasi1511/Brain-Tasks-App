@@ -1,17 +1,14 @@
-# build stage
-FROM node:18 AS build
+# Use Node image to build the React app
+FROM node:18-alpine as build
+
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 COPY . .
 RUN npm run build
 
-# production stage
-FROM node:18-alpine
-WORKDIR /app
-ENV NODE_ENV=production
-COPY --from=build /app/build ./build
-# serve the static build using a simple server like serve
-RUN npm i -g serve
+# Serve the build using nginx
+FROM nginx:alpine
+COPY --from=build /app/build /usr/share/nginx/html
 EXPOSE 3000
-CMD ["serve", "-s", "build", "-l", "3000"]
+CMD ["nginx", "-g", "daemon off;"]
