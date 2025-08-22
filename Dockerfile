@@ -1,17 +1,16 @@
-# build stage
-FROM node:18 AS build
+# ----- build stage -----
+FROM node:18-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-RUN npm run build
+RUN npm run build   # produces dist/
 
-# production stage
+# ----- runtime stage -----
 FROM node:18-alpine
 WORKDIR /app
-ENV NODE_ENV=production
-COPY --from=build /app/build ./build
-# serve the static build using a simple server like serve
-RUN npm i -g serve
+RUN npm i -g serve@14
+COPY --from=build /app/dist ./dist
 EXPOSE 3000
-CMD ["serve", "-s", "build", "-l", "3000"]
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget -qO- http://127.0.0.1:3000/ || exit 1
+CMD ["serve", "-s", "dist", "-l", "3000"]
