@@ -1,11 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: brain-tasks-service
+  name: brain-tasks-lb
+  annotations:
+    # Optional: to use an NLB or ALB specifics; remove if not needed
 spec:
   type: LoadBalancer
   selector:
-    app: brain-tasks-app
+    app: brain-tasks
   ports:
     - port: 80
-      targetPort: 80
+      targetPort: 3000
+      protocol: TCP
