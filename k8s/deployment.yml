@@ -16,10 +16,10 @@ spec:
     spec:
       containers:
         - name: brain-tasks
-          image: <ECR_REPO_URI>:latest   # replace during CI or use imagePullSecrets if private
+          image: 978439334699.dkr.ecr.ap-south-1.amazonaws.com/brain-tasks-app:latest
           imagePullPolicy: Always
           ports:
-            - containerPort: 3000
+            - containerPort: 80
           resources:
             limits:
               cpu: "500m"
