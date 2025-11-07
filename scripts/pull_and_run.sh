@@ -1,24 +1,22 @@
-set -euo pipefail
-REGION=ap-south-1
-DEPLOY_DIR="/home/ubuntu/brain-tasks-app"
-IMAGEDEF="$DEPLOY_DIR/imagedefinitions.json"
+#!/bin/bash
+echo "Pulling latest image from ECR..."
 
-if [ ! -f "$IMAGEDEF" ]; then
-  echo "ERROR: imagedefinitions.json not found at $IMAGEDEF"
-  exit 1
+# Login to Amazon ECR
+aws ecr get-login-password --region us-east-1 | sudo docker login --username AWS --password-stdin 978439334699.dkr.ecr.us-east-1.amazonaws.com
+
+# Pull latest image
+sudo docker pull 978439334699.dkr.ecr.us-east-1.amazonaws.com/brain-tasks-app:latest
+
+# Stop and remove old container if running
+old_container=$(sudo docker ps -q --filter "name=brain-app")
+if [ -n "$old_container" ]; then
+  echo "Stopping old container..."
+  sudo docker stop $old_container
+  sudo docker rm $old_container
 fi
 
-IMAGE_URI=$(jq -r '.[0].imageUri' "$IMAGEDEF")
-if [ -z "$IMAGE_URI" ] || [ "$IMAGE_URI" == "null" ]; then
-  echo "ERROR: imageUri not found in $IMAGEDEF"
-  exit 1
-fi
+# Run new container
+echo "Running new container..."
+sudo docker run -d --name brain-app -p 80:80 978439334699.dkr.ecr.us-east-1.amazonaws.com/brain-tasks-app:latest
 
-echo "Logging into ECR and pulling $IMAGE_URI"
-aws ecr get-login-password --region $REGION | sudo docker login --username AWS --password-stdin $(echo $IMAGE_URI | cut -d'/' -f1)
-
-sudo docker pull "$IMAGE_URI"
-sudo docker stop brain-tasks || true
-sudo docker rm brain-tasks || true
-
-sudo docker run -d --name brain-tasks -p 3000:80 --restart unless-stopped "$IMAGE_URI"
+echo "✅ Deployment completed successfully."
