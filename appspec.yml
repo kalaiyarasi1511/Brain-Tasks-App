@@ -5,11 +5,7 @@ files:
     destination: /home/ubuntu/brain-tasks-app
 
 hooks:
-  ApplicationStop:
-    - location: scripts/stop_container.sh
-      timeout: 300
-      runas: root
-
+  # Temporarily disable ApplicationStop until stop script is fixed
   AfterInstall:
     - location: scripts/pull_and_run.sh
       timeout: 600
@@ -19,12 +15,3 @@ hooks:
     - location: scripts/validate.sh
       timeout: 60
       runas: root
-
-  hooks:
-  ApplicationStop:
-    - location: scripts/stop_old_container.sh
-  AfterInstall:
-    - location: scripts/pull_and_run.sh
-  ApplicationStart:
-    - location: scripts/validate.sh
-
