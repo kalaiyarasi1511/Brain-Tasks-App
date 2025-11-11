@@ -5,19 +5,20 @@ phases:
     runtime-versions:
       nodejs: 18
     commands:
-      - echo "INSTALL PHASE: nothing to install (we use prebuilt dist)"
+      - echo "Installing dependencies"
+      - npm ci
   pre_build:
     commands:
-      - echo "PRE_BUILD: nothing"
+      - echo "Pre-build steps (none)"
   build:
     commands:
-      - echo "BUILD PHASE: skipping build; packaging repo files"
+      - echo "Building project"
+      - npm run build
 
 artifacts:
   files:
     - appspec.yml
-    - scripts/** 
-    - dist/** 
-    - Dockerfile* 
-    - buildspec.yml
+    - scripts/**/*
+    - dist/**/*
+    - Dockerfile*
   discard-paths: no
