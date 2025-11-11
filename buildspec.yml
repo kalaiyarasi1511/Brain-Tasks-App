@@ -29,7 +29,10 @@ phases:
 artifacts:
   files:
     - appspec.yml
-    - scripts/**/* 
-    - dist/**/*
+    - scripts/**/*
     - Dockerfile*
+    - dist/**/*
+    - package.json
+    - k8s/**/*
+  base-directory: .
 
