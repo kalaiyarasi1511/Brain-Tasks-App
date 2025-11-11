@@ -1,32 +1,33 @@
 version: 0.2
-
 env:
   variables:
-    AWS_DEFAULT_REGION: "ap-south-1"
-    REPOSITORY_NAME: "brain-tasks-app"
+    REPOSITORY_NAME: brain-tasks-app
+    AWS_DEFAULT_REGION: ap-south-1
 
 phases:
   pre_build:
     commands:
-      - echo "Logging in to Amazon ECR..."
+      - echo "Ensure ECR repos exist"
+      - aws ecr create-repository --repository-name nginx-base --region $AWS_DEFAULT_REGION || true
+      - aws ecr create-repository --repository-name $REPOSITORY_NAME --region $AWS_DEFAULT_REGION || true
       - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
       - ECR_URI=$ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$REPOSITORY_NAME
-      - echo "ECR_URI=$ECR_URI"
-      - aws --version
+      - echo "Logging in to ECR $ECR_URI"
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
 
   build:
     commands:
-      - echo "Build started on `date`"
-      - DOCKER_BUILDKIT=0 docker build -t $REPOSITORY_NAME -f Dockerfile.nginx .
+      - echo "Building Docker image..."
+      - docker build -t $REPOSITORY_NAME -f Dockerfile.nginx .
       - docker tag $REPOSITORY_NAME:latest $ECR_URI:latest
 
   post_build:
     commands:
-      - echo "Pushing the Docker image..."
+      - echo "Pushing to ECR $ECR_URI"
       - docker push $ECR_URI:latest
-      - printf '[{"name":"brain-tasks-container","imageUri":"%s"}]' $ECR_URI:latest > imagedefinitions.json
 
 artifacts:
   files:
-    - imagedefinitions.json
+    - appspec.yml
+    - scripts/**/*
+    - dist/**/*
