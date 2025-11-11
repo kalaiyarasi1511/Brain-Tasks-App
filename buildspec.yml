@@ -1,21 +1,32 @@
 version: 0.2
 
+env:
+  variables:
+    AWS_DEFAULT_REGION: "ap-south-1"
+    REPOSITORY_NAME: "brain-tasks-app"
+
 phases:
-  install:
-    commands:
-      - echo "Using prebuilt dist; no install required"
   pre_build:
     commands:
-      - echo "Pre-build: nothing"
+      - echo "Logging in to Amazon ECR..."
+      - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - ECR_URI=$ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$REPOSITORY_NAME
+      - echo "ECR_URI=$ECR_URI"
+      - aws --version
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+
   build:
     commands:
-      - echo "Build: skipping - packaging repository files"
+      - echo "Build started on `date`"
+      - DOCKER_BUILDKIT=0 docker build -t $REPOSITORY_NAME -f Dockerfile.nginx .
+      - docker tag $REPOSITORY_NAME:latest $ECR_URI:latest
+
+  post_build:
+    commands:
+      - echo "Pushing the Docker image..."
+      - docker push $ECR_URI:latest
+      - printf '[{"name":"brain-tasks-container","imageUri":"%s"}]' $ECR_URI:latest > imagedefinitions.json
 
 artifacts:
   files:
-    - appspec.yml
-    - scripts/**/*
-    - dist/**/*
-    - Dockerfile*
-    - buildspec.yml
-  discard-paths: no
+    - imagedefinitions.json
