@@ -1,3 +1,8 @@
 #!/bin/bash
-echo "Stopping old container if running..."
-docker ps -q --filter "name=myapp" | grep -q . && docker stop myapp && docker rm myapp || echo "No container to stop"
+set -e
+# stop and remove existing container if present
+if sudo docker ps -a --format '{{.Names}}' | grep -q brain-app; then
+  echo "Stopping existing container..."
+  sudo docker stop brain-app || true
+  sudo docker rm brain-app || true
+fi
